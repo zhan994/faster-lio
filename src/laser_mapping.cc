@@ -108,6 +108,9 @@ bool LaserMapping::LoadParams(ros::NodeHandle &nh) {
     } else if (lidar_type == 4) {
         preprocess_->SetLidarType(LidarType::HESAIxt32);
         LOG(INFO) << "Using Hesai Pandar 32 Lidar";
+    } else if (lidar_type == 5) {
+        preprocess_->SetLidarType(LidarType::ROBOSENSE);
+        LOG(INFO) << "Using Robosense Lidar";
     } else {
         LOG(WARNING) << "unknown lidar_type";
         return false;
@@ -278,6 +281,7 @@ void LaserMapping::Run() {
 
     /// IMU process, kf prediction, undistortion
     p_imu_->Process(measures_, kf_, scan_undistort_);
+
     if (scan_undistort_->empty() || (scan_undistort_ == nullptr)) {
         LOG(WARNING) << "No point, skip this scan!";
         return;
@@ -308,6 +312,9 @@ void LaserMapping::Run() {
     int cur_pts = scan_down_body_->size();
     if (cur_pts < 5) {
         LOG(WARNING) << "Too few points, skip this scan!" << scan_undistort_->size() << ", " << scan_down_body_->size();
+        // pcl::io::savePCDFileBinaryCompressed("/home/zhan/debug_skip.pcd", *scan_undistort_);
+        // pcl::io::savePCDFileBinaryCompressed("/home/zhan/debug_skip_down.pcd", *scan_down_body_);
+
         return;
     }
     scan_down_world_->resize(cur_pts);

@@ -3,11 +3,11 @@
 
   <arg name="rviz" default="true" />
 
-  <rosparam command="load" file="$(find faster_lio)/config/velodyne_ulhk.yaml" />
+  <rosparam command="load" file="$(find faster_lio)/config/agrilira4d.yaml" />
 
   <param name="feature_extract_enable" type="bool" value="0"/>
-  <param name="point_filter_num_" type="int" value="4"/>
-  <param name="max_iteration" type="int" value="3" />
+  <param name="point_filter_num_" type="int" value="1"/>
+  <param name="max_iteration" type="int" value="5" />
   <param name="filter_size_surf" type="double" value="0.5" />
   <param name="filter_size_map" type="double" value="0.5" />
   <param name="cube_side_length" type="double" value="1000" />

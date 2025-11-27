@@ -74,9 +74,28 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(hesai_ros::Point,
 )
 // clang-format on
 
+namespace robosense {
+struct EIGEN_ALIGN16 Point {
+  PCL_ADD_POINT4D;
+  float intensity;
+  std::uint16_t ring = 0;
+  double timestamp = 0;
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+};
+} // namespace robosense
+  // clang-format off
+POINT_CLOUD_REGISTER_POINT_STRUCT(robosense::Point,
+    (float, x, x)
+    (float, y, y)
+    (float, z, z)
+    (float, intensity, intensity)
+    (std::uint16_t, ring, ring)
+    (double, timestamp, timestamp)
+)
+
 namespace faster_lio {
 
-enum class LidarType { AVIA = 1, VELO32, OUST64,  HESAIxt32}; //{1, 2, 3, 4}
+enum class LidarType { AVIA = 1, VELO32, OUST64,  HESAIxt32, ROBOSENSE}; //{1, 2, 3, 4}
 
 /**
  * point cloud preprocess
@@ -108,6 +127,7 @@ class PointCloudPreprocess {
     void Oust64Handler(const sensor_msgs::PointCloud2::ConstPtr &msg);
     void VelodyneHandler(const sensor_msgs::PointCloud2::ConstPtr &msg);
     void HesaiHandler(const sensor_msgs::PointCloud2::ConstPtr &msg);
+    void RobosenseHandler(const sensor_msgs::PointCloud2::ConstPtr &msg);
 
     PointCloudType cloud_full_, cloud_out_;
 
