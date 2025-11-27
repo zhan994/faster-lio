@@ -1,3 +1,22 @@
+## AgriLiRa4D Dataset
+
+Install prerequisites including `ROS>=Noetic`, `Eigen>=3.3.4`, and `PCL>=1.8`.
+
+```
+sudo apt install libgoogle-glog-dev libyaml-cpp-dev
+
+cd ~/$A_ROS_DIR$/src
+git clone git@github.com:zhan994/faster-lio.git
+cd faster-lio
+git checkout agrilira4d
+cd ../..
+catkin_make
+source devel/setup.bash
+
+roslaunch faster_lio mapping_agrilira4d.launch
+```
+
+
 ## FasterLIO
 
 This is the code repository of FasterLIO by Chunge Bai, Tao Xiang, Yajie Chen, Haoqian Wang, Fang Zhang and Xiang Gao.
