@@ -804,6 +804,12 @@ void LaserMapping::PublishFrameEffectWorld(const ros::Publisher &pub_laser_cloud
 }
 
 void LaserMapping::Savetrajectory(const std::string &traj_file) {
+    common::M3D R_flu_odom, R_airbody_imu;
+    R_flu_odom << 0, 1, 0, -1, 0, 0, 0, 0, 1;
+    R_airbody_imu << 0, 0, -1, 1, 0, 0, 0, -1, 0;
+    common::V3D t_flu_odom(0.0, 0.0, 0.0);
+    common::V3D t_airbody_imu(0.0, 0.0, 0.0);
+
     std::ofstream ofs;
     ofs.open(traj_file, std::ios::out);
     if (!ofs.is_open()) {
@@ -813,9 +819,22 @@ void LaserMapping::Savetrajectory(const std::string &traj_file) {
 
     ofs << "#timestamp x y z q_x q_y q_z q_w" << std::endl;
     for (const auto &p : path_.poses) {
-        ofs << std::fixed << std::setprecision(6) << p.header.stamp.toSec() << " " << std::setprecision(15)
-            << p.pose.position.x << " " << p.pose.position.y << " " << p.pose.position.z << " " << p.pose.orientation.x
-            << " " << p.pose.orientation.y << " " << p.pose.orientation.z << " " << p.pose.orientation.w << std::endl;
+        // odom -> imu
+        common::M3D R_oi =
+            Eigen::Quaterniond(p.pose.orientation.w, p.pose.orientation.x, p.pose.orientation.y, p.pose.orientation.z)
+                .toRotationMatrix();
+        common::V3D t_oi(p.pose.position.x, p.pose.position.y, p.pose.position.z);
+        // flu -> imu
+        common::M3D R_wi = R_flu_odom * R_oi;
+        common::V3D t_wi = R_flu_odom * t_oi + t_flu_odom;
+        // flu -> body
+        common::M3D R_wb = R_wi * R_airbody_imu.transpose();
+        common::V3D t_wb = t_wi - R_wb * t_airbody_imu;
+        Eigen::Quaterniond q_wb(R_wb);
+
+        ofs << std::fixed << std::setprecision(6) << p.header.stamp.toSec() << " " << std::setprecision(15) << t_wb.x()
+            << " " << t_wb.y() << " " << t_wb.z() << " " << q_wb.x() << " " << q_wb.y() << " " << q_wb.z() << " "
+            << q_wb.w() << std::endl;
     }
 
     ofs.close();
