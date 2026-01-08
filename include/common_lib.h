@@ -2,8 +2,8 @@
 #define COMMON_LIB_H
 
 #include <deque>
-#include <vector>
 #include <string>
+#include <vector>
 
 #include <eigen_conversions/eigen_msg.h>
 #include <nav_msgs/Odometry.h>
@@ -211,8 +211,8 @@ inline bool esti_plane(Eigen::Matrix<T, 4, 1> &pca_result, const PointVector &po
 
         normvec = A.colPivHouseholderQr().solve(b);
     } else {
-        Eigen::MatrixXd A(point.size(), 3);
-        Eigen::VectorXd b(point.size(), 1);
+        Eigen::Matrix<T, Eigen::Dynamic, 3> A(static_cast<int>(point.size()), 3);
+        Eigen::Matrix<T, Eigen::Dynamic, 1> b(static_cast<int>(point.size()), 1);
 
         A.setZero();
         b.setOnes();
@@ -224,10 +224,11 @@ inline bool esti_plane(Eigen::Matrix<T, 4, 1> &pca_result, const PointVector &po
             A(j, 2) = point[j].z;
         }
 
-        Eigen::MatrixXd n = A.colPivHouseholderQr().solve(b);
-        normvec(0, 0) = n(0, 0);
-        normvec(1, 0) = n(1, 0);
-        normvec(2, 0) = n(2, 0);
+        // Eigen::MatrixXd n = A.colPivHouseholderQr().solve(b);
+        // normvec(0, 0) = n(0, 0);
+        // normvec(1, 0) = n(1, 0);
+        // normvec(2, 0) = n(2, 0);
+        normvec = A.colPivHouseholderQr().solve(b);
     }
 
     T n = normvec.norm();
