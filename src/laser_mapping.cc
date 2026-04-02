@@ -264,6 +264,7 @@ void LaserMapping::SubAndPubToROS(ros::NodeHandle &nh) {
     pub_laser_cloud_effect_world_ = nh.advertise<sensor_msgs::PointCloud2>("/cloud_registered_effect_world", 100000);
     pub_odom_aft_mapped_ = nh.advertise<nav_msgs::Odometry>("/Odometry", 100000);
     pub_path_ = nh.advertise<nav_msgs::Path>("/path", 100000);
+    pub_odom_high_freq_ = nh.advertise<nav_msgs::Odometry>("/odom_high_freq", 100000);
 }
 
 LaserMapping::LaserMapping() {
@@ -440,6 +441,9 @@ void LaserMapping::IMUCallBack(const sensor_msgs::Imu::ConstPtr &msg_in) {
     last_timestamp_imu_ = timestamp;
     imu_buffer_.emplace_back(msg);
     mtx_buffer_.unlock();
+
+    // note: add a high frequency odometry output using IMU forward integration
+    PublishHighFreqOdom(pub_odom_high_freq_, msg);
 }
 
 bool LaserMapping::SyncPackages() {
@@ -694,6 +698,16 @@ void LaserMapping::PublishOdometry(const ros::Publisher &pub_odom_aft_mapped) {
     odom_aft_mapped_.header.stamp = ros::Time().fromSec(lidar_end_time_);  // ros::Time().fromSec(lidar_end_time_);
     SetPosestamp(odom_aft_mapped_.pose);
     pub_odom_aft_mapped.publish(odom_aft_mapped_);
+
+    // note: update odom_high_freq using the latest state
+    odom_high_freq_.header.frame_id = tf_world_frame_;
+    odom_high_freq_.child_frame_id = tf_imu_frame_;
+    odom_high_freq_.header.stamp = ros::Time().fromSec(lidar_end_time_);
+    SetPosestamp(odom_high_freq_.pose);
+    odom_high_freq_.twist.twist.linear.x = state_point_.vel(0);
+    odom_high_freq_.twist.twist.linear.y = state_point_.vel(1);
+    odom_high_freq_.twist.twist.linear.z = state_point_.vel(2);
+
     auto P = kf_.get_P();
     for (int i = 0; i < 6; i++) {
         int k = i < 3 ? i + 3 : i - 3;
@@ -716,6 +730,61 @@ void LaserMapping::PublishOdometry(const ros::Publisher &pub_odom_aft_mapped) {
     q.setZ(odom_aft_mapped_.pose.pose.orientation.z);
     transform.setRotation(q);
     br.sendTransform(tf::StampedTransform(transform, odom_aft_mapped_.header.stamp, tf_world_frame_, tf_imu_frame_));
+
+    std::cout << std::fixed << std::setprecision(5) << "odom aft mapped: " << odom_aft_mapped_.pose.pose.position.x
+              << ", " << odom_aft_mapped_.pose.pose.position.y << ", " << odom_aft_mapped_.pose.pose.position.z
+              << ", ts: " << lidar_end_time_ << std::endl;
+}
+
+void LaserMapping::PublishHighFreqOdom(const ros::Publisher &pub_odom_high_freq, const sensor_msgs::Imu::Ptr &msg) {
+    double dt = msg->header.stamp.toSec() - odom_high_freq_.header.stamp.toSec();
+    if (dt < 0.001) return;  // avoid too high frequency
+
+    odom_high_freq_.header.frame_id = tf_world_frame_;
+    odom_high_freq_.child_frame_id = tf_imu_frame_;
+    odom_high_freq_.header.stamp = msg->header.stamp;
+
+    // latest odometry
+    common::V3D pos(odom_high_freq_.pose.pose.position.x, odom_high_freq_.pose.pose.position.y,
+                    odom_high_freq_.pose.pose.position.z);
+    common::M3D rot = common::QD(odom_high_freq_.pose.pose.orientation.w, odom_high_freq_.pose.pose.orientation.x,
+                                 odom_high_freq_.pose.pose.orientation.y, odom_high_freq_.pose.pose.orientation.z)
+                          .toRotationMatrix();
+    common::V3D vel(odom_high_freq_.twist.twist.linear.x, odom_high_freq_.twist.twist.linear.y,
+                    odom_high_freq_.twist.twist.linear.z);
+
+    // forward integrate using IMU measurements
+    common::V3D acc(msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z);
+    common::V3D gyr(msg->angular_velocity.x, msg->angular_velocity.y, msg->angular_velocity.z);
+
+    common::V3D pos_inc = vel * dt;
+    common::V3D rot_inc = (gyr - state_point_.bg) * dt;
+    common::V3D vel_inc = (rot * (acc - state_point_.ba) + state_point_.grav.vec) * dt;
+
+    // update odometry
+    pos += pos_inc;
+    rot = rot * Exp(std::move(rot_inc));
+    vel += vel_inc;
+
+    std::cout << std::fixed << std::setprecision(5) << "high odom: " << pos.x() << ", " << pos.y() << ", " << pos.z()
+              << ", ts: " << msg->header.stamp.toSec() << std::endl;
+
+    odom_high_freq_.pose.pose.position.x = pos.x();
+    odom_high_freq_.pose.pose.position.y = pos.y();
+    odom_high_freq_.pose.pose.position.z = pos.z();
+
+    common::QD q(rot);
+    q.normalize();
+    odom_high_freq_.pose.pose.orientation.w = q.w();
+    odom_high_freq_.pose.pose.orientation.x = q.x();
+    odom_high_freq_.pose.pose.orientation.y = q.y();
+    odom_high_freq_.pose.pose.orientation.z = q.z();
+
+    odom_high_freq_.twist.twist.linear.x = vel.x();
+    odom_high_freq_.twist.twist.linear.y = vel.y();
+    odom_high_freq_.twist.twist.linear.z = vel.z();
+
+    pub_odom_high_freq.publish(odom_high_freq_);
 }
 
 void LaserMapping::PublishFrameWorld() {

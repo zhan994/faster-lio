@@ -61,6 +61,8 @@ class LaserMapping {
     void PublishFrameEffectWorld(const ros::Publisher &pub_laser_cloud_effect_world);
     void Savetrajectory(const std::string &traj_file);
 
+    void PublishHighFreqOdom(const ros::Publisher &pub_odom_high_freq, const sensor_msgs::Imu::Ptr &msg);
+
     void Finish();
 
    private:
@@ -118,6 +120,7 @@ class LaserMapping {
     ros::Publisher pub_laser_cloud_effect_world_;
     ros::Publisher pub_odom_aft_mapped_;
     ros::Publisher pub_path_;
+    ros::Publisher pub_odom_high_freq_;
     std::string tf_imu_frame_;
     std::string tf_world_frame_;
 
@@ -126,6 +129,7 @@ class LaserMapping {
     std::deque<PointCloudType::Ptr> lidar_buffer_;
     std::deque<sensor_msgs::Imu::ConstPtr> imu_buffer_;
     nav_msgs::Odometry odom_aft_mapped_;
+    nav_msgs::Odometry odom_high_freq_;
 
     /// options
     bool time_sync_en_ = false;

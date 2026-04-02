@@ -68,6 +68,9 @@ using V5F = Eigen::Matrix<float, 5, 1>;
 using M3F = Eigen::Matrix3f;
 using M4F = Eigen::Matrix4f;
 
+using QD = Eigen::Quaterniond;
+using QF = Eigen::Quaternionf;
+
 using VV3D = std::vector<V3D, Eigen::aligned_allocator<V3D>>;
 using VV3F = std::vector<V3F, Eigen::aligned_allocator<V3F>>;
 using VV4F = std::vector<V4F, Eigen::aligned_allocator<V4F>>;

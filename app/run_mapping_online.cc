@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
         if (faster_lio::options::FLAG_EXIT) {
             break;
         }
-        ros::spinOnce();
+        ros::spinOnce();  // spin once to trigger the callbacks
         laser_mapping->Run();
         rate.sleep();
     }
