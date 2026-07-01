@@ -76,14 +76,14 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(hesai_ros::Point,
 
 namespace robosense {
 struct EIGEN_ALIGN16 Point {
-  PCL_ADD_POINT4D;
-  float intensity;
-  std::uint16_t ring = 0;
-  double timestamp = 0;
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    PCL_ADD_POINT4D;
+    float intensity;
+    std::uint16_t ring = 0;
+    double timestamp = 0;
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
-} // namespace robosense
-  // clang-format off
+}  // namespace robosense
+   // clang-format off
 POINT_CLOUD_REGISTER_POINT_STRUCT(robosense::Point,
     (float, x, x)
     (float, y, y)
@@ -93,9 +93,36 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(robosense::Point,
     (double, timestamp, timestamp)
 )
 
+namespace tw360{
+struct EIGEN_ALIGN16 Point {
+  PCL_ADD_POINT4D;
+
+  float intensity;
+  int channel;
+  float angle;
+  int echo;
+  int block;           /*For duetto*/
+  unsigned int t_sec;  /* The value represents seconds since 1900-01-01 00:00:00
+                          (the UNIX epoch).*/
+  unsigned int t_usec; /* remaining microseconds */
+  float time;
+
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+};
+} // namespace tw360
+  // clang-format off
+POINT_CLOUD_REGISTER_POINT_STRUCT(
+    tw360::Point,
+    (float, x, x)(float, y, y)(float, z, z)(float, intensity, intensity)
+    (int, channel, channel)(float, angle, angle)(int, echo, echo)
+    (int, block, block)
+    (unsigned int, t_sec, t_sec)(unsigned int, t_usec, t_usec)
+    (float, time, time))
+
+
 namespace faster_lio {
 
-enum class LidarType { AVIA = 1, VELO32, OUST64,  HESAIxt32, ROBOSENSE}; //{1, 2, 3, 4}
+enum class LidarType { AVIA = 1, VELO32, OUST64,  HESAIxt32, ROBOSENSE, TW}; //{1, 2, 3, 4}
 
 /**
  * point cloud preprocess
@@ -128,6 +155,7 @@ class PointCloudPreprocess {
     void VelodyneHandler(const sensor_msgs::PointCloud2::ConstPtr &msg);
     void HesaiHandler(const sensor_msgs::PointCloud2::ConstPtr &msg);
     void RobosenseHandler(const sensor_msgs::PointCloud2::ConstPtr &msg);
+    void TW360Handler(const sensor_msgs::PointCloud2::ConstPtr &msg);
 
     PointCloudType cloud_full_, cloud_out_;
 

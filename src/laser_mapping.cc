@@ -111,6 +111,9 @@ bool LaserMapping::LoadParams(ros::NodeHandle &nh) {
     } else if (lidar_type == 5) {
         preprocess_->SetLidarType(LidarType::ROBOSENSE);
         LOG(INFO) << "Using Robosense Lidar";
+    } else if (lidar_type == 6) {
+        preprocess_->SetLidarType(LidarType::TW);
+        LOG(INFO) << "Using Tanway 360 Lidar";
     } else {
         LOG(WARNING) << "unknown lidar_type";
         return false;

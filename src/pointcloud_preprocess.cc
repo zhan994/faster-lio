@@ -33,6 +33,10 @@ void PointCloudPreprocess::Process(const sensor_msgs::PointCloud2::ConstPtr &msg
         case LidarType::ROBOSENSE:
             RobosenseHandler(msg);
             break;
+        
+        case LidarType::TW:
+            TW360Handler(msg);
+            break;
 
         default:
             LOG(ERROR) << "Error LiDAR Type";
@@ -306,6 +310,46 @@ void PointCloudPreprocess::RobosenseHandler(const sensor_msgs::PointCloud2::Cons
         added_pt.normal_y = 0;
         added_pt.normal_z = 0;
         added_pt.curvature = (pl_orig.points[i].timestamp - pl_orig.points[0].timestamp) * 1.e3f;  // curvature unit: ms
+
+        cloud_out_.points.push_back(added_pt);
+    }
+}
+
+void PointCloudPreprocess::TW360Handler(const sensor_msgs::PointCloud2::ConstPtr &msg) {
+    cloud_out_.clear();
+    cloud_full_.clear();
+
+    pcl::PointCloud<tw360::Point> pl_orig;
+    pcl::fromROSMsg(*msg, pl_orig);
+    int plsize = pl_orig.points.size();
+    cloud_out_.reserve(plsize);
+
+    float time_head = pl_orig.points[0].t_usec * 1e-6f + pl_orig.points[0].t_sec;
+    for (int i = 0; i < pl_orig.points.size(); i++) {
+        if (i % point_filter_num_ != 0) continue;
+
+        if (!(std::isfinite(pl_orig.points[i].x) && std::isfinite(pl_orig.points[i].y) &&
+              std::isfinite(pl_orig.points[i].z)))
+            continue;
+
+        double range = pl_orig.points[i].x * pl_orig.points[i].x + pl_orig.points[i].y * pl_orig.points[i].y +
+                       pl_orig.points[i].z * pl_orig.points[i].z;
+
+        if (range < (blind_ * blind_)) continue;
+
+        Eigen::Vector3d pt_vec;
+        PointType added_pt;
+        added_pt.x = pl_orig.points[i].x;
+        added_pt.y = pl_orig.points[i].y;
+        added_pt.z = pl_orig.points[i].z;
+        added_pt.intensity = pl_orig.points[i].intensity;
+        added_pt.normal_x = 0;
+        added_pt.normal_y = 0;
+        added_pt.normal_z = 0;
+        float time = pl_orig.points[i].t_usec * 1e-6f + pl_orig.points[i].t_sec;
+        added_pt.curvature = (time - time_head) * 1e3f; // curvature unit: ms, from ns to ms
+
+        // std::cout << added_pt.curvature << std::endl;
 
         cloud_out_.points.push_back(added_pt);
     }

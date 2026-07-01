@@ -1,10 +1,10 @@
 common:
-  lid_topic: "/rslidar_points"
-  imu_topic: "/rslidar_imu_data"
+  lid_topic: "/tanwaylidar_pointcloud"
+  imu_topic: "/tanwaylidar_imu"
   time_sync_en: false         # ONLY turn on when external time synchronization is really not possible
 
 preprocess:
-  lidar_type: 5                # 1 for Livox serials LiDAR, 2 for Velodyne LiDAR, 3 for ouster LiDAR, 4 for Hesai LiDAR, 5 for Robosense LiDAR
+  lidar_type: 6                # 1 for Livox serials LiDAR, 2 for Velodyne LiDAR, 3 for ouster LiDAR, 4 for Hesai LiDAR, 5 for Robosense LiDAR
   scan_line: 96
   blind: 2
   time_scale: 1e-3             # 兼容不同数据集的时间单位，仅对Velodyne LiDAR(lidar_type=2)生效
@@ -17,18 +17,10 @@ mapping:
   fov_degree: 360
   det_range: 100.0
   extrinsic_est_en: false      # true: enable the online estimation of IMU-LiDAR extrinsic
-  extrinsic_T: [ 0.00425, 0.00418, -0.00446 ]
-  extrinsic_R: [  0.0, -1.0, 0.0,
-                    -1.0, 0.0,  0.0,
-                    0.0,  0.0, -1.0 ]
-  # extrinsic_T: [ 0.01365, 0.00782, 0.00492 ]
-  # extrinsic_R: [  1.0,  0.0,  0.0,
-  #               0.0,  1.0,  0.0,
-  #               0.0,  0.0,  1.0 ]
-  # extrinsic_T: [ -0.0174, 0.00957, -0.0076 ]
-  # extrinsic_R: [  1.0,  0.0,  0.0,
-  #               0.0,  1.0,  0.0,
-  #               0.0,  0.0,  1.0 ]
+  extrinsic_T: [ -0.01167, -0.01696, -0.0078 ]
+  extrinsic_R: [  1.0,  0.0,  0.0,
+                0.0,  1.0,  0.0,
+                0.0,  0.0,  1.0 ]
 
 publish:
   path_publish_en: false
